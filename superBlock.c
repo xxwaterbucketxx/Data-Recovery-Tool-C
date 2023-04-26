@@ -1,41 +1,7 @@
-//Victor Vu, vhv180000
-//CS 4398.001 Digital Forensics
-//Assignmnet 3
-
-//This project demonstrate the usages and understanding of a linux file system 
-//by reading a USB device's MBR and its partitions to find data like magic signatures,
-//Super Block addresses, Size of blocks and block groups and more
-
-//This program requires admin permissions and a standard NTFS formated drive 
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <math.h>
-
-void print_info(int fd);
-void getPartAddr(int fd);
-void getSuperBlkAddr(int fd, int blockNum);
-int hexToint(unsigned char hex[], int size);
-
-//Main function
-int main(int argc, char **argv )
-{
-    int fd = open(argv[1], O_RDONLY);
-
-    if (fd < 0)
-    {
-        printf("Device could not be found/opened\n\n");
-    }
-    else
-    {
-        print_info(fd);
-    }
-
-    close(fd);
-
-    return 0;
-}
 
 //Driver function
 void print_info(int fd)
