@@ -163,3 +163,8 @@ int hexToint(unsigned char hex[], int length)
     
     return return_Value;
 }
+
+void getBlockSize(int Size_Field)
+{
+    return pow(2, (10 + Size_Field));
+}
