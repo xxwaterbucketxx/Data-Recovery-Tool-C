@@ -2,11 +2,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "sigSearch.h"
+#include "superBlock.h"
 
 int getHead(int fd)
 {    
+    int blockSize = getBlockSize(fd);
     // Block size
-    unsigned char block[4096];
+    unsigned char block[blockSize];
     
     // GIF header signature
     unsigned char gif87aSig[6] = {0x47, 0x49, 0x46, 0x38, 0x37, 0x61};
@@ -19,7 +21,7 @@ int getHead(int fd)
     int block_number = 0;
 
     // Reads in file partition for each block
-    while(read(fd, block, 4096) > 0)
+    while(read(fd, block, blockSize) > 0)
     {
         // For every 6 bytes it checks to see if the bytes matches with the GIF header signature
         for(int x = 0; x < 6; x++)
