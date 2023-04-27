@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "sigSearch.c"
-#include "superBlock.c"
+#include "sigSearch.h"
+#include "superBlock.h"
 
 int main(int argc, char *argv[]) 
 {
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	print_info(fd);
+	
 
 	return 0;
 }
