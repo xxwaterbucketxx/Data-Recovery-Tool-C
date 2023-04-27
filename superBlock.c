@@ -12,6 +12,24 @@ void print_info(int fd)
     getSuperBlkAddr(fd, 3);
 }
 
+int getBlockSize(int fd)
+{
+    int SB_Addr, Size_Field;
+    unsigned char block_Size_Field[4];
+
+    getPartAddr(fd);
+
+    SB_Addr = lseek(fd, 0x400, SEEK_CUR);
+    
+    lseek(fd, SB_Addr, SEEK_SET);
+    lseek(fd, 0x18, SEEK_CUR);
+    read(fd, block_Size_Field, 4);
+
+    Size_Field = hexToint(block_Size_Field, 4);
+
+    return pow(2, (10 + Size_Field));
+}
+
 //Used to get the addresses of the partitions in the MBR
 void getPartAddr(int fd)
 {
@@ -164,7 +182,3 @@ int hexToint(unsigned char hex[], int length)
     return return_Value;
 }
 
-void getBlockSize(int Size_Field)
-{
-    return pow(2, (10 + Size_Field));
-}
