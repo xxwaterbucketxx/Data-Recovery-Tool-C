@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <math.h>
+#include "superBlock.h"
 
 //Driver function
 void print_info(int fd)

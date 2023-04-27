@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "sigSearch.c"
+#include "superBlock.c"
 
 int main(int argc, char *argv[]) 
 {

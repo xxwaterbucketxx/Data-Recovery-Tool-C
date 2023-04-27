@@ -1,7 +1,7 @@
-
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "sigSearch.h"
 
 int getHead(int fd)
 {    
