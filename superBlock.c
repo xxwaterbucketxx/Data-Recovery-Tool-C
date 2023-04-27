@@ -67,6 +67,7 @@ void getPartAddr(int fd)
     //being looked for, but for the time being this assignment calls 
     //for only the super blocks of the first partition
 
+    /* This code is not needed
     for (int x = 0; x < 4; x++)
     {
         if (part_Addr[x] != 0)
@@ -75,6 +76,7 @@ void getPartAddr(int fd)
             printf("Partition %d start address: 0x%X(hex) or %d(dec)\n\n", x, part_Addr[x], part_Addr[x]);
         }
     }
+    */
 
     lseek(fd, part_Addr[0], SEEK_SET);
 }
