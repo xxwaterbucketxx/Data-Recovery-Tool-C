@@ -11,6 +11,8 @@
 
 int main(int argc, char *argv[]) 
 {
+	int headerBlock;
+
 	if (argc != 2) 
 	{
 		printf("Invalid parameters. Run the program 'sudo ./programname device name'\n");
@@ -18,13 +20,14 @@ int main(int argc, char *argv[])
 	}
 
 	int fd = open(argv[1], O_RDONLY);
+
 	if (fd < 0) 
 	{
 		perror("Open error");
 		exit(EXIT_FAILURE);
 	}
-
 	
+	headerBlock = getHead(fd);
 
 	return 0;
 }
