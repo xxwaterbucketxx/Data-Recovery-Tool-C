@@ -20,6 +20,8 @@ int getHead(int fd)
     // Initialize block number
     int block_number = 0;
 
+    lseek(fd, 0, SEEK_SET);
+
     // Reads in file partition for each block
     while(read(fd, block, blockSize) > 0)
     {
@@ -31,6 +33,7 @@ int getHead(int fd)
             
             if (x == 5)
             {
+                block_number -= 256;
                 printf("Match found for GIF87a or GIF89a at block #%d\n", block_number);
                 return block_number;
             }
@@ -44,6 +47,7 @@ int getHead(int fd)
 
             if (y == 4)
             {
+                block_number -= 256;
                 printf("Match found for PDF at block #%d\n", block_number);
                 return block_number;
             }
@@ -52,5 +56,5 @@ int getHead(int fd)
         block_number++;
     }
     
-    return 0;
+    return block_number;
 }
