@@ -1,5 +1,5 @@
-#ifndef SUPER_H_
-#define SUPER_H_
+#ifndef SUPERBLOCK_H_
+#define SUPERBLOCK_H_
 
 void print_info(int fd);
 void getPartAddr(int fd);
