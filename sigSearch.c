@@ -33,7 +33,7 @@ int getHead(int fd)
             
             if (x == 5)
             {
-                printf("Match found for GIF87a or GIF89a at block #%d\n", block_number - 256);
+                printf("Match found for GIF87a or GIF89a at the relative block #%d\n", block_number - 256);
                 return block_number;
             }
         }
@@ -46,7 +46,7 @@ int getHead(int fd)
 
             if (y == 4)
             {
-                printf("Match found for PDF at block #%d\n", block_number - 256);
+                printf("Match found for PDF at the relative block #%d\n", block_number - 256);
                 return block_number;
             }
         }

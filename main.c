@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
 	int fd = open(argv[1], O_RDONLY);
 	// 1 = gif, 2 = pdf
 	int fileType = atoi(argv[2]);
-	printf("%d\n", fileType);
 
 	if (fd < 0) 
 	{
@@ -48,12 +47,10 @@ int main(int argc, char *argv[])
 	unsigned char block[blockSize];
 	lseek(fd, 0, SEEK_SET);
 	headerBlock = getHead(fd);
-	printf("%d\n", headerBlock);
 	blockCounter = headerBlock;
 
 	offset = headerBlock * blockSize;
 	test = lseek(fd, offset, SEEK_SET);
-	printf("%d\n", test);
 
 	switch(fileType)
 	{
@@ -88,6 +85,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 	bool indirectBlock = false;
 	int nextBlock;
 	unsigned char dataBlock[blockSize];
+	int rBlockCounter = 0;
 
 	while(read(fd, block, blockSize) > 0)
 	{
@@ -124,37 +122,39 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 
 		if(blockIndex == 12)
 		{
+			rBlockCounter = blockCounter - 256;
+			int counter = -1;
 			lseek(fd, 0, SEEK_SET);
-			printf("%d", blockCounter);
+
 			while(read(fd, block, blockSize) > 0)
 			{
+
 				for(int i = 0; i < 4; i++)
 				{
 					hexBlock[i] = block[i];
 				}
 
-				
-
-				if(blockCounter == hexToint(hexBlock, 4))
+				if(rBlockCounter == hexToint(hexBlock, 4))
 				{
 					for(int j = 4; j < 8; j++)
 					{
-						nextHexBlock[j-4] = block[j];
+						hexBlock[j-4] = block[j];
 					}
 					
-					if(++blockCounter == hexToint(nextHexBlock, 4))
+					//If true then the block found is the indirect block needed
+					if(++rBlockCounter == hexToint(hexBlock, 4))
 					{
-						for(int x = 0; x < blockSize; x += 4)
+						for(int x = 0; x < blockSize - 4; x += 4)
 						{
 							for(int y = 0; y < 4; y++)
 							{
 								hexBlock[y] = block[x + y];
 							}
 
-							nextBlock = hexToint(hexBlock, 4);
+							nextBlock = hexToint(hexBlock, 4) + 256;
 							offset = nextBlock * blockSize;
 
-							if(offset == 0)
+							if(hexToint(hexBlock, 4) == 0)
 							{
 								eof = true;
 								break;
