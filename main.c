@@ -46,8 +46,7 @@ int main(int argc, char *argv[])
     lseek(fd, 0, SEEK_SET);
 	blockSize = getBlockSize(fd);
 	unsigned char block[blockSize];
-	test = lseek(fd, 0, SEEK_SET);
-	printf("%d\n", test);
+	lseek(fd, 0, SEEK_SET);
 	headerBlock = getHead(fd);
 	printf("%d\n", headerBlock);
 	blockCounter = headerBlock;
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
 	switch(fileType)
 	{
 		case 1:
-			int gifFd = open("output.gif", O_CREAT | O_WRONLY);
+			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY);
 			writeOutput(fd, gifFd, block, blockSize, gifSig, blockCounter);
 			close(gifFd);
 			break;
@@ -90,90 +89,89 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 	int nextBlock;
 	unsigned char dataBlock[blockSize];
 
-	read(fd, block, blockSize);
-	write(outfd, block, blockSize);
+	while(read(fd, block, blockSize) > 0)
+	{
+		if(blockIndex <= 11)
+		{
+			for(int i = 0; i < blockSize - sigSize; i++)
+			{
+				eof = true;
 
-	// while(read(fd, block, blockSize) > 0)
-	// {
-	// 	if(blockIndex <= 11)
-	// 	{
-	// 		for(int i = 0; i < blockSize - sigSize; i++)
-	// 		{
-	// 			eof = true;
-
-	// 			for(int j = 0; j < sigSize; j++) 
-	// 			{
-	// 				if(block[i] != sig[j])
-	// 				{
-	// 					eof = false;
-	// 				}
-	// 			}
+				for(int j = 0; j < sigSize; j++) 
+				{
+					if(block[i] != sig[j])
+					{
+						eof = false;
+					}
+				}
 				
 
-	// 			if(eof)
-	// 			{
-	// 				// EOF offset
-	// 				offset = i;
-	// 				break;
-	// 			}
-	// 		}
+				if(eof)
+				{
+					// EOF offset
+					offset = i;
+					break;
+				}
+			}
 
-	// 		write(outfd, block, sizeof(block));
-	// 	}
+			write(outfd, block, blockSize);
+		}
 
-	// 	if(eof)
-	// 	{
-	// 		break;
-	// 	}
+		if(eof)
+		{
+			break;
+		}
 
-	// 	if(blockIndex == 12)
-	// 	{
-	// 		lseek(fd, 0, SEEK_SET);
-	// 		while(read(fd, block, blockSize) > 0)
-	// 		{
-	// 			for(int i = 0; i < 4; i++)
-	// 			{
-	// 				hexBlock[i] = block[i];
-	// 			}
+		if(blockIndex == 12)
+		{
+			lseek(fd, 0, SEEK_SET);
+			printf("%d", blockCounter);
+			while(read(fd, block, blockSize) > 0)
+			{
+				for(int i = 0; i < 4; i++)
+				{
+					hexBlock[i] = block[i];
+				}
 
-	// 			if(blockCounter == hexToint(hexBlock, 4))
-	// 			{
-	// 				for(int j = 4; j < 8; j++)
-	// 				{
-	// 					nextHexBlock[j-4] = block[j];
-	// 				}
+				
+
+				if(blockCounter == hexToint(hexBlock, 4))
+				{
+					for(int j = 4; j < 8; j++)
+					{
+						nextHexBlock[j-4] = block[j];
+					}
 					
-	// 				if(++blockCounter == hexToint(nextHexBlock, 4))
-	// 				{
-	// 					printf("here\n");
-	// 					for(int x = 0; x < blockSize; x += 4)
-	// 					{
-	// 						for(int y = 0; y < 4; y++)
-	// 						{
-	// 							hexBlock[y] = block[x + y];
-	// 						}
+					if(++blockCounter == hexToint(nextHexBlock, 4))
+					{
+						for(int x = 0; x < blockSize; x += 4)
+						{
+							for(int y = 0; y < 4; y++)
+							{
+								hexBlock[y] = block[x + y];
+							}
 
-	// 						nextBlock = hexToint(hexBlock, 4);
-	// 						offset = nextBlock * blockSize;
+							nextBlock = hexToint(hexBlock, 4);
+							offset = nextBlock * blockSize;
 
-	// 						if(offset == 0)
-	// 						{
-	// 							eof = true;
-	// 							break;
-	// 						}
+							if(offset == 0)
+							{
+								eof = true;
+								break;
+							}
 
-	// 						lseek(fd, offset, SEEK_SET);
-	// 						read(fd, dataBlock, blockSize);
-	// 						write(outfd, dataBlock, sizeof(dataBlock));
-	// 					}
-	// 				}
-	// 			}				
-	// 		}
-	// 	}
+							lseek(fd, offset, SEEK_SET);
+							read(fd, dataBlock, blockSize);
+							write(outfd, dataBlock, blockSize);
+						}
+					}
+				}				
+			}
+		}
 
-	// 	blockCounter++;
-	// 	blockIndex++;
-	// }
+		blockCounter++;
+		blockIndex++;
+	}
 }
 
 void decimal_to_hex(int decimal, unsigned char* hex) {
