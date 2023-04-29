@@ -1,7 +1,8 @@
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "superBlock.h"
 
 //Driver function

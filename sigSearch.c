@@ -1,6 +1,7 @@
-#include <stdio.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
+
 #include "sigSearch.h"
 #include "superBlock.h"
 
