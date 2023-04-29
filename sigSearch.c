@@ -6,6 +6,9 @@
 
 int getHead(int fd)
 {    
+    // Initialize block number
+    int block_number = 0;
+
     int blockSize = getBlockSize(fd);
     // Block size
     unsigned char block[blockSize];
@@ -16,9 +19,6 @@ int getHead(int fd)
     
     //PDF header signature
     unsigned char pdfSig[5] = {0x25, 0x50, 0x44, 0x46, 0x2D};
-
-    // Initialize block number
-    int block_number = 0;
 
     lseek(fd, 0, SEEK_SET);
 
@@ -33,7 +33,6 @@ int getHead(int fd)
             
             if (x == 5)
             {
-                printf("Match found for GIF87a or GIF89a at the relative block #%d\n", block_number - 256);
                 return block_number;
             }
         }
@@ -46,7 +45,6 @@ int getHead(int fd)
 
             if (y == 4)
             {
-                printf("Match found for PDF at the relative block #%d\n", block_number - 256);
                 return block_number;
             }
         }

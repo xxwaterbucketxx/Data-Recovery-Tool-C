@@ -6,25 +6,21 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+
 #include "sigSearch.h"
 #include "superBlock.h"
 
 int main(int argc, char *argv[]) 
 {
-	int headerBlock;
 	int blockSize;
+	int eofOffset;
+	int headerBlock;
 	int offset;
-
-	int test;
 	
 	unsigned char pdfSig[5] = {0x25, 0x25, 0x45, 0x4F, 0x46};
     unsigned char gifSig[2] = {0x3B, 0x00};
 
 	bool eof = false;
-
-	int eofOffset;
-	int blockCounter;
-
 
 	if (argc != 3) 
 	{
@@ -43,25 +39,27 @@ int main(int argc, char *argv[])
 	}
 
     lseek(fd, 0, SEEK_SET);
+
 	blockSize = getBlockSize(fd);
 	unsigned char block[blockSize];
+
 	lseek(fd, 0, SEEK_SET);
+
 	headerBlock = getHead(fd);
-	blockCounter = headerBlock;
 
 	offset = headerBlock * blockSize;
-	test = lseek(fd, offset, SEEK_SET);
+	lseek(fd, offset, SEEK_SET);
 
 	switch(fileType)
 	{
 		case 1:
 			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY, 0644);
-			writeOutput(fd, gifFd, block, blockSize, gifSig, blockCounter);
+			writeOutput(fd, gifFd, block, blockSize, gifSig, headerBlock);
 			close(gifFd);
 			break;
 		case 2:
 			int pdfFd = open("output.pdf", O_APPEND | O_CREAT | O_WRONLY, 0644);
-			writeOutput(fd, pdfFd, block, blockSize, pdfSig, blockCounter);
+			writeOutput(fd, pdfFd, block, blockSize, pdfSig, headerBlock);
 			close(pdfFd);
 			break;
 		default:
@@ -75,7 +73,6 @@ int main(int argc, char *argv[])
 }
 
 void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsigned char sig[], int blockCounter){
-	int j = 0;
 	int sigSize = sizeof(sig) / sizeof(sig[0]);
 	bool eof = false;
 	int offset = 0;
@@ -124,7 +121,6 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 		if(blockIndex == 12)
 		{
 			rBlockCounter = blockCounter - 256;
-			int counter = -1;
 			lseek(fd, 0, SEEK_SET);
 
 			while(read(fd, block, blockSize) > 0)
@@ -170,19 +166,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 
 							if(nextBlock == 0)
 							{
-								lseek(fd, offset, SEEK_SET);
-								read(fd, dataBlock, blockSize);
-
-								for(int a = blockSize - 1; a > -1; a--)
-								{
-									if(dataBlock[a] != 0)
-									{
-										blockSize = a + 1;
-										break;
-									}
-								}
-
-								write(outfd, dataBlock, blockSize);
+								writeLastBlock(fd, outfd, offset, dataBlock, blockSize);
 							}
 							else
 							{
@@ -201,24 +185,19 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 	}
 }
 
-void decimal_to_hex(int decimal, unsigned char* hex) {
-    int remainder, quotient, i = 1, j;
-    char temp;
-    quotient = decimal;
-    while (quotient != 0) {
-        remainder = quotient % 16;
-        if (remainder < 10)
-            hex[i++] = remainder + 48;
-        else
-            hex[i++] = remainder + 55;
-        quotient = quotient / 16;
-    }
-    // Reverse the hexadecimal string
-    for (j = 1; j < i; j++) {
-        temp = hex[j];
-        hex[j] = hex[i - j];
-        hex[i - j] = temp;
-    }
-    hex[i] = '\0';
-}
+void writeLastBlock(int fd, int outfd, int offset, unsigned char dataBlock[], int blockSize)
+{
+	lseek(fd, offset, SEEK_SET);
+	read(fd, dataBlock, blockSize);
 
+	for(int a = blockSize - 1; a > -1; a--)
+	{
+		if(dataBlock[a] != 0)
+		{
+			blockSize = a;
+			break;
+		}
+	}
+
+	write(outfd, dataBlock, blockSize + 1);
+}
