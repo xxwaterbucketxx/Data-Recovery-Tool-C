@@ -7,4 +7,6 @@ Victor Part
 - Refactored and reformated code 
 
 Eric Part
-- Developed algorithm to write data data  
+- Developed algorithm to write data into output files
+- Debugged code to write data from recovered file to output file
+- Refactored and reformated code
