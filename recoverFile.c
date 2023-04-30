@@ -55,12 +55,12 @@ int main(int argc, char *argv[])
 	switch(fileType)
 	{
 		case 1:
-			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY, 0644);
+			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY);
 			writeOutput(fd, gifFd, block, blockSize, gifSig, blockCounter);
 			close(gifFd);
 			break;
 		case 2:
-			int pdfFd = open("output.pdf", O_APPEND | O_CREAT | O_WRONLY, 0644);
+			int pdfFd = open("output.pdf", O_APPEND | O_CREAT | O_WRONLY);
 			writeOutput(fd, pdfFd, block, blockSize, pdfSig, blockCounter);
 			close(pdfFd);
 			break;
@@ -78,13 +78,12 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 {
 	int sigSize = sizeof(sig) / sizeof(sig[0]);
 	bool eof = false;
-	int offset = 0;
+	int offset;
 	int blockIndex = 0;
 	unsigned char hexBlock[4];
 	unsigned char nextHexBlock[4];
 	bool indirectBlock = false;
-	int nextBlock = 0;
-	int rBlock = 0;
+	int nextBlock;
 	unsigned char dataBlock[blockSize];
 	int rBlockCounter = 0;
 
@@ -151,44 +150,18 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 								hexBlock[y] = block[x + y];
 							}
 
-							rBlock = hexToint(hexBlock, 4) + 256;
-							offset = rBlock * blockSize;
-							
+							nextBlock = hexToint(hexBlock, 4) + 256;
+							offset = nextBlock * blockSize;
+
 							if(hexToint(hexBlock, 4) == 0)
 							{
 								eof = true;
 								break;
 							}
-							
-							for(int z = 4; z < 8; z++)
-							{
-								hexBlock[z - 4] = block[x + z];
-							}
-							nextBlock = hexToint(hexBlock, 4);
-						
 
-							if(nextBlock == 0)
-							{
-								lseek(fd, offset, SEEK_SET);
-								read(fd, dataBlock, blockSize);
-
-								for(int a = blockSize - 1; a > -1; a--)
-								{
-									if(dataBlock[a] != 0)
-									{
-										blockSize = a + 1;
-										break;
-									}
-								}
-
-								write(outfd, dataBlock, blockSize);
-							}
-							else
-							{
-								lseek(fd, offset, SEEK_SET);
-								read(fd, dataBlock, blockSize);
-								write(outfd, dataBlock, blockSize);
-							}
+							lseek(fd, offset, SEEK_SET);
+							read(fd, dataBlock, blockSize);
+							write(outfd, dataBlock, blockSize);
 						}
 					}
 				}				
