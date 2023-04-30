@@ -74,8 +74,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsigned char sig[], int blockCounter){
-	int j = 0;
+void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsigned char sig[], int blockCounter)
+{
 	int sigSize = sizeof(sig) / sizeof(sig[0]);
 	bool eof = false;
 	int offset = 0;
@@ -124,7 +124,6 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 		if(blockIndex == 12)
 		{
 			rBlockCounter = blockCounter - 256;
-			int counter = -1;
 			lseek(fd, 0, SEEK_SET);
 
 			while(read(fd, block, blockSize) > 0)
