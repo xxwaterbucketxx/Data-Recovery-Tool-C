@@ -58,11 +58,20 @@ int main(int argc, char *argv[])
 
     lseek(fd, 0, SEEK_SET);
 
+	//Command line output on whats happening
+	printf("Getting block size...\n");
+	
 	//Gets block size of the drive based on the value given by the super block
 	blockSize = getBlockSize(fd);
 	unsigned char block[blockSize];
 
 	lseek(fd, 0, SEEK_SET);
+
+	//Command line output on whats happening
+	if (fileType == 1)
+		printf("Getting GIF file header block number...\n");
+	else
+		printf("Getting PDF file header block number...\n");
 
 	//Gets absoulte block number based on respective file type 
 	headerBlock = getHead(fd);
@@ -91,5 +100,6 @@ int main(int argc, char *argv[])
 
 	close(fd);
 
+	printf("File was successfully recovered!\n");
 	return 0;
 }

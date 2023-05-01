@@ -28,7 +28,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 
 	// This while loop will read the given EXT3 file system block by block 
 	// and loads each respective block into a block unsigned char array
-	while(read(fd, block, blockSize) > 0)
+	while(read(fd, block, blockSize) > 0 && !eof)
 	{
 		// This checks if the block is a direct block
 		if(blockIndex <= 11)
@@ -56,12 +56,8 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 				}
 			}
 
+			printf("Copying deleted file inode index %d block\n", blockIndex);
 			write(outfd, block, blockSize);
-		}
-
-		if(eof)
-		{
-			break;
 		}
 
 		// This gets activated when an first indirect block is needed 
@@ -79,8 +75,9 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 			// block that has its first four bytes equal the next sequential block after the direct blocks
 			lseek(fd, 0, SEEK_SET);
 
+			printf("Searching for respective indirect block...\n");
 			//This is similar to reading blocks in the prior step of direct blocks
-			while(read(fd, block, blockSize) > 0)
+			while(read(fd, block, blockSize) > 0 && !eof)
 			{
 				for(int i = 0; i < 4; i++)
 				{
@@ -98,6 +95,8 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 					//This checks the next block to gurantee that it is infact the correct indirect block
 					if(++rBlockCounter == hexToint(hexBlock, 4))
 					{
+						printf("Respective indirect block found...\n");
+
 						for(int x = 0; x < blockSize - 4; x += 4)
 						{
 							for(int y = 0; y < 4; y++)
@@ -126,6 +125,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 							//This either trims the block to the EOF markers or writes the entire block to the new file
 							if(nextBlock == 0)
 							{
+								printf("Writing last indirect block...\n");
 								writeLastBlock(fd, outfd, offset, dataBlock, blockSize);
 							}
 							else
