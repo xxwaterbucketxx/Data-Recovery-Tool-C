@@ -9,6 +9,9 @@
 
 #include "recoveringFile.h"
 
+//This function is used to write found files associated to a recently deleted PDF or GIF file 
+// on a EXT3 formated file system, this function also assumes that the given fd has its 
+// pointer pointed to the first block where the file is located 
 void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsigned char sig[], int blockCounter)
 {
 	int sigSize = sizeof(sig) / sizeof(sig[0]);
@@ -23,10 +26,15 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 	unsigned char dataBlock[blockSize];
 	int rBlockCounter = 0;
 
+	// This while loop will read the given EXT3 file system block by block 
+	// and loads each respective block into a block unsigned char array
 	while(read(fd, block, blockSize) > 0)
 	{
+		// This checks if the block is a direct block
 		if(blockIndex <= 11)
 		{
+			//This for loop is used to check if the EOF marker 
+			// is located within the first eleven direct blocks
 			for(int i = 0; i < blockSize - sigSize; i++)
 			{
 				eof = true;
@@ -56,19 +64,30 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 			break;
 		}
 
+		// This gets activated when an first indirect block is needed 
 		if(blockIndex == 12)
 		{
+			// Since the values in the indirect block have no reference to the 
+			// boot block there is a relative block number and absolute block 
+			// number depeneding on how you access the drive, in the case of 
+			// the project, we access the entire drive and so the block numbers
+			// that are in the indriect block are off by 256 blocks since the blocks
+			// referenced in the indirect block have no reference to things outside the partition
 			rBlockCounter = blockCounter - 256;
+			
+			// We set the fd pointer back to the beginning so we can search all the blocks to find the 
+			// block that has its first four bytes equal the next sequential block after the direct blocks
 			lseek(fd, 0, SEEK_SET);
 
+			//This is similar to reading blocks in the prior step of direct blocks
 			while(read(fd, block, blockSize) > 0)
 			{
-
 				for(int i = 0; i < 4; i++)
 				{
 					hexBlock[i] = block[i];
 				}
-
+				
+				//This checks if the block we are at is the correct indirect block 
 				if(rBlockCounter == hexToint(hexBlock, 4))
 				{
 					for(int j = 4; j < 8; j++)
@@ -76,7 +95,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 						hexBlock[j-4] = block[j];
 					}
 					
-					//If true then the block found is the indirect block needed
+					//This checks the next block to gurantee that it is infact the correct indirect block
 					if(++rBlockCounter == hexToint(hexBlock, 4))
 					{
 						for(int x = 0; x < blockSize - 4; x += 4)
@@ -86,22 +105,25 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 								hexBlock[y] = block[x + y];
 							}
 
+							//This calculates the absolute location of the block based on the relative location inside the indirect block
 							rBlock = hexToint(hexBlock, 4) + 256;
 							offset = rBlock * blockSize;
 							
+							//This checks if the current four bytes is zero to exit the indirect block
 							if(hexToint(hexBlock, 4) == 0)
 							{
 								eof = true;
 								break;
 							}
 							
+							//This checks if the next block is zero dictate whether or not we need to trim the end of the block 
 							for(int z = 4; z < 8; z++)
 							{
 								hexBlock[z - 4] = block[x + z];
 							}
 							nextBlock = hexToint(hexBlock, 4);
 						
-
+							//This either trims the block to the EOF markers or writes the entire block to the new file
 							if(nextBlock == 0)
 							{
 								writeLastBlock(fd, outfd, offset, dataBlock, blockSize);
@@ -123,6 +145,7 @@ void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsign
 	}
 }
 
+//This function is used write the last block in the indirect block with the trimmed ending and not having trailing zeros 
 void writeLastBlock(int fd, int outfd, int offset, unsigned char dataBlock[], int blockSize)
 {
 	lseek(fd, offset, SEEK_SET);
