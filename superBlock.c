@@ -1,7 +1,8 @@
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <math.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "superBlock.h"
 
 //Driver function
@@ -12,6 +13,7 @@ void print_info(int fd)
     getSuperBlkAddr(fd, 3);
 }
 
+//This function is used to get the block size of the file based on the values found in the zero'th superblock
 int getBlockSize(int fd)
 {
     int SB_Addr, Size_Field;

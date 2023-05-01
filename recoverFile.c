@@ -1,30 +1,41 @@
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <string.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "recoveringFile.h"
 #include "sigSearch.h"
 #include "superBlock.h"
 
+
+// Victor Vu, vhv180000
+// Eric Ngo, ebn180000
+
+// CS 4398.001 Final Project 
+
+// This project demonstrates the topics and learning outcomes of all things to do 
+// with CS 4398 digtial forensics, this project takes a zeroed EXT3 formated drive 
+// that has a PDF or GIF file loaded onto it and then has subsequently been deleted 
+// off the drive, this project will then looks for the header of the PDF or GIF file, 
+// searches and copies all the associated files for the PDF or GIF file to then recover 
+// the aformentioned deleated PDF or GIF file.
+
 int main(int argc, char *argv[]) 
 {
-	int headerBlock;
 	int blockSize;
+	int eofOffset;
+	int headerBlock;
 	int offset;
-
-	int test;
 	
+	//EOF file signatures for respective file types
 	unsigned char pdfSig[5] = {0x25, 0x25, 0x45, 0x4F, 0x46};
     unsigned char gifSig[2] = {0x3B, 0x00};
 
 	bool eof = false;
-
-	int eofOffset;
-	int blockCounter;
-
 
 	if (argc != 3) 
 	{
@@ -32,10 +43,13 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	//Opens file with given argument
 	int fd = open(argv[1], O_RDONLY);
+	
 	// 1 = gif, 2 = pdf
 	int fileType = atoi(argv[2]);
 
+	//This is a catch for if the drive was unable to be opened
 	if (fd < 0) 
 	{
 		perror("Open error");
@@ -43,25 +57,31 @@ int main(int argc, char *argv[])
 	}
 
     lseek(fd, 0, SEEK_SET);
+
+	//Gets block size of the drive based on the value given by the super block
 	blockSize = getBlockSize(fd);
 	unsigned char block[blockSize];
+
 	lseek(fd, 0, SEEK_SET);
+
+	//Gets absoulte block number based on respective file type 
 	headerBlock = getHead(fd);
-	blockCounter = headerBlock;
 
+	//Gets absoulte byte offset with found absoulte block number and super block block size value
 	offset = headerBlock * blockSize;
-	test = lseek(fd, offset, SEEK_SET);
+	lseek(fd, offset, SEEK_SET);
 
+	//Creates respective output files with respective file type tags
 	switch(fileType)
 	{
 		case 1:
-			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY);
-			writeOutput(fd, gifFd, block, blockSize, gifSig, blockCounter);
+			int gifFd = open("output.gif", O_APPEND | O_CREAT | O_WRONLY, 0644);
+			writeOutput(fd, gifFd, block, blockSize, gifSig, headerBlock);
 			close(gifFd);
 			break;
 		case 2:
-			int pdfFd = open("output.pdf", O_APPEND | O_CREAT | O_WRONLY);
-			writeOutput(fd, pdfFd, block, blockSize, pdfSig, blockCounter);
+			int pdfFd = open("output.pdf", O_APPEND | O_CREAT | O_WRONLY, 0644);
+			writeOutput(fd, pdfFd, block, blockSize, pdfSig, headerBlock);
 			close(pdfFd);
 			break;
 		default:
@@ -73,124 +93,3 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-void writeOutput(int fd, int outfd, unsigned char block[], int blockSize, unsigned char sig[], int blockCounter)
-{
-	int sigSize = sizeof(sig) / sizeof(sig[0]);
-	bool eof = false;
-	int offset;
-	int blockIndex = 0;
-	unsigned char hexBlock[4];
-	unsigned char nextHexBlock[4];
-	bool indirectBlock = false;
-	int nextBlock;
-	unsigned char dataBlock[blockSize];
-	int rBlockCounter = 0;
-
-	while(read(fd, block, blockSize) > 0)
-	{
-		if(blockIndex <= 11)
-		{
-			for(int i = 0; i < blockSize - sigSize; i++)
-			{
-				eof = true;
-
-				for(int j = 0; j < sigSize; j++) 
-				{
-					if(block[i] != sig[j])
-					{
-						eof = false;
-					}
-				}
-				
-
-				if(eof)
-				{
-					// EOF offset
-					offset = i;
-					break;
-				}
-			}
-
-			write(outfd, block, blockSize);
-		}
-
-		if(eof)
-		{
-			break;
-		}
-
-		if(blockIndex == 12)
-		{
-			rBlockCounter = blockCounter - 256;
-			lseek(fd, 0, SEEK_SET);
-
-			while(read(fd, block, blockSize) > 0)
-			{
-
-				for(int i = 0; i < 4; i++)
-				{
-					hexBlock[i] = block[i];
-				}
-
-				if(rBlockCounter == hexToint(hexBlock, 4))
-				{
-					for(int j = 4; j < 8; j++)
-					{
-						hexBlock[j-4] = block[j];
-					}
-					
-					//If true then the block found is the indirect block needed
-					if(++rBlockCounter == hexToint(hexBlock, 4))
-					{
-						for(int x = 0; x < blockSize - 4; x += 4)
-						{
-							for(int y = 0; y < 4; y++)
-							{
-								hexBlock[y] = block[x + y];
-							}
-
-							nextBlock = hexToint(hexBlock, 4) + 256;
-							offset = nextBlock * blockSize;
-
-							if(hexToint(hexBlock, 4) == 0)
-							{
-								eof = true;
-								break;
-							}
-
-							lseek(fd, offset, SEEK_SET);
-							read(fd, dataBlock, blockSize);
-							write(outfd, dataBlock, blockSize);
-						}
-					}
-				}				
-			}
-		}
-
-		blockCounter++;
-		blockIndex++;
-	}
-}
-
-void decimal_to_hex(int decimal, unsigned char* hex) {
-    int remainder, quotient, i = 1, j;
-    char temp;
-    quotient = decimal;
-    while (quotient != 0) {
-        remainder = quotient % 16;
-        if (remainder < 10)
-            hex[i++] = remainder + 48;
-        else
-            hex[i++] = remainder + 55;
-        quotient = quotient / 16;
-    }
-    // Reverse the hexadecimal string
-    for (j = 1; j < i; j++) {
-        temp = hex[j];
-        hex[j] = hex[i - j];
-        hex[i - j] = temp;
-    }
-    hex[i] = '\0';
-}
-
